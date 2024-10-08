@@ -40,7 +40,7 @@ let STATE = {
   checkServerInterval: null,
   retrievingMessageFromServer: false,
   corrlinks_account: null,
-  lastMessage: null,
+  messageQueue: [],
 };
 
 
@@ -92,10 +92,15 @@ function start() {
     const tab = tabs[0];
     STATE.tab = tab;
 
-    if (!isValidSite(tab)) {
-      handleInvalidSite(tab, 'Invalid site, cannot activate extension.');
+    const result = isValidSite(tab);
+
+    if (!result.isValid) {
+      handleInvalidSite(tab, result.msg);
       return;
     }
+
+
+
     console.debug(fn, 'Sender extension successfully initiated...');
     chrome.action.setIcon(onIcon);
     STATE.running = true;
@@ -119,6 +124,9 @@ function stop() {
   };
   if (STATE.tab) sendMessageToTab(STATE.tab.id, msg);
   stopServerCheck()
+
+
+
   resetState();
 }
 
@@ -143,20 +151,33 @@ function isValidSite(tab) {
 
   if (tab.url.includes(C.WEBSITE_DETAILS.LOGIN)) {
     console.debug('Invalid host:', tab.url);
-    return false; // Invalid host
+    return {
+      isValid: false,
+      msg: 'Login Page Detected: Please login and retry.'
+    };
   }
 
   if (!tab.title.includes(C.WEBSITE_DETAILS.TITLE)) {
     console.debug('Invalid title:', tab.title);
-    return false; // Invalid title
+    return {
+      isValid: false,
+      msg: `This extension can only be activated on a site with the title ${C.WEBSITE_DETAILS.TITLE}`
+    };
   }
 
   if (!tab.url.includes(C.WEBSITE_DETAILS.HOST)) {
     console.debug('Invalid host:', tab.url);
-    return false; // Invalid host
+
+    return {
+      isValid: false,
+      msg: `This extension can only be activated on a site hosted on ${C.WEBSITE_DETAILS.HOST}`
+    };
   }
 
-  return true
+  return {
+    isValid: true,
+    msg: 'Site is valid.'
+  };
 }
 
 
@@ -176,6 +197,8 @@ function showAlert(tabID, tabURL, message) {
 function resetState() {
   STATE.running = false;
   STATE.tab = null;
+  STATE.checkServerInterval = null;
+  STATE.retrievingMessageFromServer = null;
   chrome.action.setIcon(offIcon);
   stopServerCheck()
 
@@ -189,17 +212,16 @@ function sendMessageToTab(tabId, message) {
 
 
 
+
 async function retrieveMessageFromServer() {
   if (!STATE.corrlinks_account) return;
 
-
-
-  if (STATE.lastMessage) {
-    sendNewMessageNotification(STATE.lastMessage)
-    STATE.lastMessage = null
-    return
+  // First, send queued messages if available (Robust and feasible: as rarely msgs are queued - So minor delay...)
+  if (STATE.messageQueue.length > 0) {
+    const queuedMessage = STATE.messageQueue.shift();
+    sendNewMessageNotification(queuedMessage);
+    return;
   }
-
   const fn = 'retrieveMessageFromServer:';
   STATE.retrievingMessageFromServer = new Date();
   const url = C.SERVER.GET_NEXT_MESSAGE + '?corrlinks_account=' + STATE.corrlinks_account;
@@ -209,6 +231,7 @@ async function retrieveMessageFromServer() {
       "Content-Type": "application/json"
     },
   };
+
   try {
     let r = await fetch(url, config);
     STATE.retrievingMessageFromServer = false;
@@ -231,6 +254,9 @@ async function retrieveMessageFromServer() {
     console.error(fn, e);
   }
 }
+
+
+
 
 let serverPolling = false;
 
@@ -284,6 +310,13 @@ function sendMessageDeliveryUpdateToServer(data, response) {
 }
 
 
+
+sendMessageDeliveryUpdateToServer({
+  id: "",
+  status: "MESSAGE_COULD_NOT_BE_DELIVERED"
+});
+
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
     sendResponse({
@@ -292,16 +325,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.action === 'setState') {
     stop();
-
   }
   if (request.action === "SET_CORRLINKS_ACCOUNT") {
+    if (STATE.corrlinks_account !== null && STATE.corrlinks_account !== request.corrlinks_account) {
+      STATE.messageQueue = []; // Clear the message queue
+      console.log('Message queue cleared due to account change');
+    }
+
     STATE.corrlinks_account = request.corrlinks_account;
     console.log('STATE.corrlinks_account set to ' + STATE.corrlinks_account);
-
-
-
-
   }
+
   if (request.type === 'MESSAGE_DELIVERED') {
     const uniqueID = request.id;
     sendMessageDeliveryUpdateToServer({
@@ -324,8 +358,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
   }
   if (request.action === 'ADD_MSG_TO_QUEUE') {
-    console.log("Msg added to queue")
-    STATE.lastMessage = request.message;
+
+    const exists = STATE.messageQueue.some(existingMessage =>
+      JSON.stringify(existingMessage) === JSON.stringify(request.message)
+    );
+    if (!exists) {
+      STATE.messageQueue.push(request.message); // Enqueue the new message
+      console.log("Msg added to queue");
+
+    }
   }
 
 });
@@ -345,9 +386,11 @@ chrome.tabs.onUpdated.addListener((updatedTabId, changeInfo, tab) => {
       const msg = {
         message: "CHECK_PAGE_TYPE",
       };
-
-      sendMessageToTab(tab.id, msg);
-
+      setTimeout(() => {
+        sendMessageToTab(tab.id, msg);
+      }, 1000);
     }
+
+
   }
 });
