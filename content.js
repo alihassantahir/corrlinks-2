@@ -21,6 +21,9 @@ async function startUp(reload) {
         corrlinks_account
       });
 
+    if(corrlink_account && reload)
+    window.location.href=window.location.href
+
     }
     navigate();
   } catch (error) {
@@ -40,7 +43,7 @@ function requestState() {
 
       if (currentState) {
 
-        startUp(true);
+        startUp();
 
       }
     }
@@ -54,7 +57,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       return;
 
     case "START_INTEGRATION":
-      startUp();
+      startUp(true);
       return;
 
     case "STOP_INTEGRATION":
