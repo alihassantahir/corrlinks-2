@@ -335,7 +335,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'MESSAGE_DELIVERED') {
     const uniqueID = request.id;
-    if(uniqueID) return
+    if(!uniqueID) return
     sendMessageDeliveryUpdateToServer({
       id: uniqueID,
       status: "MESSAGE_DELIVERED"
@@ -343,7 +343,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.type === 'MESSAGE_COULD_NOT_BE_DELIVERED') {
     const uniqueID = request.id;
-    if(uniqueID) return
+    if(!uniqueID) return
     sendMessageDeliveryUpdateToServer({
       id: uniqueID,
       status: "MESSAGE_COULD_NOT_BE_DELIVERED"
@@ -351,13 +351,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.type === 'USER_NOT_FOUND_IN_CORRLINKS') {
     const uniqueID = request.id;
+    if(!uniqueID) return
     sendMessageDeliveryUpdateToServer({
       id: uniqueID,
       status: "USER_NOT_FOUND_IN_CORRLINKS"
     });
   }
   if (request.action === 'ADD_MSG_TO_QUEUE') {
-
     const exists = STATE.messageQueue.some(existingMessage =>
       JSON.stringify(existingMessage) === JSON.stringify(request.message)
     );
