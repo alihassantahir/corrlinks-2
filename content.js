@@ -183,7 +183,7 @@ function processMessage(message) {
     const pageType = getPageType();
     if (pageType === "NEW_MESSAGE") {
         STATE.currentMessage = message;
-        let data = message.data.message //Unsure yet the server runs out of messages before I can test.
+        let data = message.data.message //Unsure yet the server runs out of messages before I can test. Only this line needs to be checked
         console.log(data)
 
         if (!data) return
@@ -203,9 +203,6 @@ function processMessage(message) {
                         fillSubject(subject);
                         fillMessage(messagebody);
                         validateMessage();
-                        localStorage.removeItem('MsgBeforeNavigate');
-
-
                     })
                     .catch((error) => {
                         STATE.currentMessage = null;
@@ -416,19 +413,15 @@ function validateMessage(uniqueID) {
 
         const subjectInput = document.querySelector('input[formcontrolname="subject"]');
         const messageInput = document.querySelector('textarea[formcontrolname="message"]');
-
         const isSubjectValid = subjectInput && subjectInput.value.trim() !== '';
         const isMessageValid = messageInput && messageInput.value.trim() !== '';
-
         if (isSubjectValid && isMessageValid) {
             console.log('All inputs are valid, proceeding to click Send');
             const buttons = document.querySelectorAll('button');
             const sendButton = Array.from(buttons).find(button => button.textContent.trim() === 'Send');
-
             if (sendButton) {
                 sendButton.click();
                 setTimeout(() => {
-
                     if (successfullySent()) { //After 3s (MAX usually comes in 1s) there must be a Dialog box which confirms
                         const deliveredID = {
                             type: 'MESSAGE_DELIVERED',
@@ -455,6 +448,7 @@ function validateMessage(uniqueID) {
                 };
                 sendMessage(deliveredID)
                 STATE.currentMessage = null;
+                navigate(true)
             }
 
         }
