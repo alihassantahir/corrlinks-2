@@ -62,8 +62,7 @@ function checkPending() {
                 });
                 STATE.currentMessage = null;
                 localStorage.removeItem('MsgBeforeNavigate');
-
-                navigate(true) //User was not found let backend know about it and navigate to compose page
+                navigate(true) //User was not found let the backend know about it and navigate to the compose page
 
             });
 
@@ -184,7 +183,7 @@ function processMessage(message) {
     const pageType = getPageType();
     if (pageType === "NEW_MESSAGE") {
         STATE.currentMessage = message;
-        let data = message.data.message //Unsure yet the server runs out of message before I can test.
+        let data = message.data.message //Unsure yet the server runs out of messages before I can test.
         console.log(data)
 
         if (!data) return
@@ -238,7 +237,7 @@ function isLoginPage() {
     return targetUrls.some(url => window.location.href === url);
 }
 
-function hasLoggedOut() { // This fn sends msg to BG script to ABORT if user is logged out... 
+function hasLoggedOut() { // This fn sends a message to BG script to ABORT if the user is logged out... 
 
     if (isLoginPage()) {
         setState();
@@ -334,30 +333,13 @@ async function clickItem(id) {
         unCheckAll(); //Uncheck any existing item before clicking the one that matches ID
 
         let userFound = false;
-
         listItems.forEach((item) => {
             const nameSpan = item.querySelectorAll('.recipient-item-desktop')[0]; //ID is contained in the first span of each item
             const match = nameSpan && nameSpan.textContent.match(/\((\d+)\)/);
             if (match && match[1] === id) {
                 const checkboxWrapper = item.closest("li");
                 if (checkboxWrapper) {
-
-
-                    const mousedownEvent = new MouseEvent('mousedown', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window,
-                    });
-                    const mouseupEvent = new MouseEvent('mouseup', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window,
-                    });
-                    checkboxWrapper.dispatchEvent(mousedownEvent);
-                    checkboxWrapper.dispatchEvent(mouseupEvent);
-
-
-
+                    specialClick(checkboxWrapper)
                     userFound = true;
                     resolve("USER FOUND IN CORRLINKS");
                 }
@@ -480,7 +462,22 @@ function validateMessage(uniqueID) {
 }
 
 
-
+function specialClick(element)
+{
+        if(!element) return
+                    const mousedownEvent = new MouseEvent('mousedown', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                    });
+                    const mouseupEvent = new MouseEvent('mouseup', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                    });
+                    element.dispatchEvent(mousedownEvent);
+                    element.dispatchEvent(mouseupEvent);
+}
 
 function simulateInput(element) {
     if (!element) return;
