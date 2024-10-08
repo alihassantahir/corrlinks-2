@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Corrlinks Extension 2 - Send messages TO Corrlinks",
+  "description": "This extension is designed to retrieve messages from the backend service and deliver them to Corrlinks users.",
+  "version": "2.0",
+  "author": "Shaun Underwood",
+  "action": {
+    "default_icon": {
+      "128": "images/cw-off.png"
+    },
+    "default_title": "Corrlinks <- WhatsApp"
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting"
+
+  ],
+"host_permissions": [
+		"https://*.ngrok.io/*"
+	],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.corrlinks.com/*"
+      ],
+      "js": ["content.js"]
+    }
+  ],
+  "icons": {
+    "128": "images/cw-off.png"
+  }
+}
