@@ -13,7 +13,7 @@ To start it, click its Icon in the browser Extensions button.
 The icon will indicate the extension's status.
 
 
-NOTE: Please avoid running both extensions in the same tab, i.e. If the Receiver extension is already activated on say Tab 2, please make sure to activate the Sender extension on any other tab. Because they'll interfere and none can do it's job.
+NOTE: Please avoid running both extensions in the same tab, i.e. If the Receiver extension is already activated on say Tab 2, please make sure to activate the Sender extension on any other tab. Because they'll interfere and none will be able to do its job.
 
 ## Stopping Extension:
 
