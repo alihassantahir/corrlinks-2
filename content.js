@@ -21,17 +21,14 @@ async function startUp(reload) {
         corrlinks_account
       });
 
-
     }
     navigate();
-    checkPending()
   } catch (error) {
     return;
   }
 
 
 }
-
 
 function requestState() {
 
@@ -44,14 +41,11 @@ function requestState() {
       if (currentState) {
 
         startUp(true);
-        checkPending()
 
       }
     }
   });
 }
-
-
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   switch (request.message) {
@@ -65,7 +59,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
     case "STOP_INTEGRATION":
       STATE.stopNow = true;
-      window.location.href = window.location.href //Reload 
+
       return;
 
     case "NEW_MESSAGE_FROM_WHATSAPP":
@@ -74,7 +68,6 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
   }
 });
-
 
 
 async function getCorrlinksAccount() {
@@ -113,12 +106,10 @@ function processMessage(message) {
     addMessagetoQueue(message)
     return;
   }
-  const pageType = getPageType();
-  if (pageType === "NEW_MESSAGE") {
+  if (getPageType() === "NEW_MESSAGE") {
     STATE.currentMessage = message;
     let data = message.data.message //Unsure yet the server runs out of messages before I can test. Only this line needs to be checked
-    console.log(data)
-
+     
     if (!data) return
     let id = null,
       subject = null,
@@ -128,14 +119,14 @@ function processMessage(message) {
     messagebody = data.body;
     msgID = data.id;
     if (id && subject && messagebody && msgID) {
-
+      console.log("Message data: ", data)
       setTimeout(() => {
         openList();
         clickItem(id)
           .then((result) => {
             fillSubject(subject);
             fillMessage(messagebody);
-            validateMessage();
+            validateMessage(data.id);
           })
           .catch((error) => {
             STATE.currentMessage = null;
@@ -150,49 +141,10 @@ function processMessage(message) {
       return;
     }
   } else {
-    localStorage.setItem('MsgBeforeNavigate', JSON.stringify(message));
-    navigate() // This will navigate to the Compose message page and try to send from there...
+    addMessagetoQueue(message)
+    navigate(true)
   }
 }
-
-
-function checkPending() {
-  const storedMessage = localStorage.getItem('MsgBeforeNavigate');
-  if (storedMessage && isComposePage()) {
-    STATE.currentMessage = storedMessage;
-    const messageData = JSON.parse(storedMessage);
-    openList();
-
-
-    clickItem(messageData.id)
-      .then((message) => {
-        console.log(message); // USER FOUND IN CORRLINKS
-        fillSubject(messageData.subject);
-        fillMessage(messageData.message);
-        validateMessage();
-        localStorage.removeItem('MsgBeforeNavigate');
-        STATE.currentMessage = null;
-        navigate()
-
-
-
-      })
-      .catch((error) => {
-
-        sendMessage({
-          type: "USER_NOT_FOUND_IN_CORRLINKS",
-          id: messageData.id
-        });
-        STATE.currentMessage = null;
-        localStorage.removeItem('MsgBeforeNavigate');
-        navigate(true) //User was not found let the backend know about it and navigate to the compose page
-
-      });
-
-
-  }
-}
-
 
 
 
@@ -279,41 +231,6 @@ function fillMessage(text) {
   simulateClick(MainMsgBox) //This is necessary to remove ng-untouched class
 }
 
-function clickItem(id) {
-
-  const Main = document.querySelector('.e-multi-select-list-wrapper');
-  if (!Main) return
-
-  const activeItems = Main.querySelectorAll('.e-list-item.e-active');
-  const listItems = Main.querySelectorAll('.e-list-item');
-
-  function unCheckAll() {
-    activeItems.forEach((activeItem) => {
-      const checkboxWrapper = activeItem.querySelector('.e-checkbox-wrapper');
-      if (checkboxWrapper) {
-
-        simulateClick(checkboxWrapper, true);
-
-      }
-    });
-  }
-  unCheckAll(); //Uncheck any existing Item before clicking the one that matches ID...
-
-  listItems.forEach((item) => {
-    const nameSpan = item.querySelectorAll('.recipient-item-desktop')[0]; //ID is contained in the First span of each Item
-    const match = nameSpan && nameSpan.textContent.match(/\((\d+)\)/);
-    if (match && match[1] === id) {
-
-      const checkboxWrapper = item.closest("li");
-      if (checkboxWrapper) //Somehow this works here but not simulateClick or native .click()
-      {
-
-
-      }
-    }
-  });
-
-}
 
 async function clickItem(id) {
   return new Promise((resolve, reject) => {
@@ -353,7 +270,6 @@ async function clickItem(id) {
   });
 }
 
-
 function getPageType() {
 
   let result = null;
@@ -362,7 +278,6 @@ function getPageType() {
 
   }
   return result;
-
 }
 
 
@@ -405,12 +320,12 @@ function hasLoggedOut() { // This fn sends a message to BG script to ABORT if th
 }
 
 
-function navigate(bypass) { // To compose message page
+function navigate(bypass) {
+ // To compose message page
   if (window.location.href !== "https://www.corrlinks.com/en-US/mailbox/compose") {
     window.location.href = "https://www.corrlinks.com/en-US/mailbox/compose";
   } else if (bypass) {
     window.location.href = "https://www.corrlinks.com/en-US/mailbox/compose";
-
   }
 }
 
