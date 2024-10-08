@@ -314,13 +314,6 @@ function sendMessageDeliveryUpdateToServer(data, response) {
 }
 
 
-
-sendMessageDeliveryUpdateToServer({
-  id: "",
-  status: "MESSAGE_COULD_NOT_BE_DELIVERED"
-});
-
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
     sendResponse({
@@ -342,6 +335,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'MESSAGE_DELIVERED') {
     const uniqueID = request.id;
+    if(uniqueID) return
     sendMessageDeliveryUpdateToServer({
       id: uniqueID,
       status: "MESSAGE_DELIVERED"
@@ -349,6 +343,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.type === 'MESSAGE_COULD_NOT_BE_DELIVERED') {
     const uniqueID = request.id;
+    if(uniqueID) return
     sendMessageDeliveryUpdateToServer({
       id: uniqueID,
       status: "MESSAGE_COULD_NOT_BE_DELIVERED"
