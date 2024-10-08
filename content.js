@@ -3,8 +3,10 @@ const STATE = {
   currentMessage: null
 };
 
+
+
 window.onload = () => {
-  startUp()
+
   requestState()
 
 };
@@ -12,25 +14,32 @@ window.onload = () => {
 async function startUp(reload) {
   const fn = 'startUp:';
   STATE.stopNow = false;
+
   try {
-    const corrlinks_account = await getCorrlinksAccount();
+    setTimeout(async () => {
+      try {
+        const corrlinks_account = await getCorrlinksAccount();
 
-    if (corrlinks_account) {
-      sendMessage({
-        action: "SET_CORRLINKS_ACCOUNT",
-        corrlinks_account
-      });
+        if (corrlinks_account) {
+          sendMessage({
+            action: "SET_CORRLINKS_ACCOUNT",
+            corrlinks_account
+          });
 
-    if(corrlink_account && reload)
-    window.location.href=window.location.href
+          if (reload) {
+            window.location.href = window.location.href;
+          }
+        }
+      } catch (error) {
+        console.error("Error inside setTimeout:", error);
+      }
+    }, 1000);
 
-    }
     navigate();
   } catch (error) {
+    console.error("Error in startUp function:", error);
     return;
   }
-
-
 }
 
 function requestState() {
@@ -42,8 +51,8 @@ function requestState() {
       const currentState = response.state;
 
       if (currentState) {
-
         startUp();
+
 
       }
     }
@@ -86,8 +95,8 @@ async function getCorrlinksAccount() {
   if (!userButton) {
     return Promise.reject();
   }
-
   userButton.click();
+
 
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -112,7 +121,7 @@ function processMessage(message) {
   if (getPageType() === "NEW_MESSAGE") {
     STATE.currentMessage = message;
     let data = message.data.message //Unsure yet the server runs out of messages before I can test. Only this line needs to be checked
-     
+
     if (!data) return
     let id = null,
       subject = null,
@@ -324,7 +333,7 @@ function hasLoggedOut() { // This fn sends a message to BG script to ABORT if th
 
 
 function navigate(bypass) {
- // To compose message page
+  // To compose message page
   if (window.location.href !== "https://www.corrlinks.com/en-US/mailbox/compose") {
     window.location.href = "https://www.corrlinks.com/en-US/mailbox/compose";
   } else if (bypass) {
