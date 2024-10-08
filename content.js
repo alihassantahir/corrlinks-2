@@ -6,7 +6,7 @@ const STATE = {
 
 
 window.onload = () => {
-
+  startUp()
   requestState()
 
 };
