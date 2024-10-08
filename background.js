@@ -6,25 +6,25 @@ console.debug(`Current ngrok server address: ${SERVER}`);
 console.log('To see all logs, set the console to VERBOSE');
 
 const C = {
-	DEFAULTS: {
-		UPDATE_CONTENT_STATE_SECONDS: 10,
-	},
-	WEBSITE_DETAILS: {
-		TITLE: 'CorrLinks',
-		HOST: 'www.corrlinks.com',
-		LOGIN: 'https://www.corrlinks.com/en-US/login'
-	},
-	MESSAGES: {
-		START_INTEGRATION: 'START_INTEGRATION',
-		STOP_INTEGRATION: 'STOP_INTEGRATION',
-		NEW_MESSAGE_FROM_WHATSAPP: 'NEW_MESSAGE_FROM_WHATSAPP',
-	},
-	SERVER: {
-		SERVER: SERVER,
-		SEND_POST_MESSAGE: `${SERVER}/message-from-corrlinks`,
-		GET_NEXT_MESSAGE: `${SERVER}/message-to-corrlinks`,
-		NOTIFY_DELIVERY_STATUS: `${SERVER}/delivery-status-of-message-to-corrlinks`,
-	}
+  DEFAULTS: {
+    UPDATE_CONTENT_STATE_SECONDS: 10,
+  },
+  WEBSITE_DETAILS: {
+    TITLE: 'CorrLinks',
+    HOST: 'www.corrlinks.com',
+    LOGIN: 'https://www.corrlinks.com/en-US/login'
+  },
+  MESSAGES: {
+    START_INTEGRATION: 'START_INTEGRATION',
+    STOP_INTEGRATION: 'STOP_INTEGRATION',
+    NEW_MESSAGE_FROM_WHATSAPP: 'NEW_MESSAGE_FROM_WHATSAPP',
+  },
+  SERVER: {
+    SERVER: SERVER,
+    SEND_POST_MESSAGE: `${SERVER}/message-from-corrlinks`,
+    GET_NEXT_MESSAGE: `${SERVER}/message-to-corrlinks`,
+    NOTIFY_DELIVERY_STATUS: `${SERVER}/delivery-status-of-message-to-corrlinks`,
+  }
 };
 
 const onIcon = {
@@ -35,18 +35,21 @@ const offIcon = {
 };
 
 let STATE = {
-	running: false,
-	tab: null,
-	checkServerInterval: null,
-	retrievingMessageFromServer: false,
-	corrlinks_account: null,
-        lastMessage:null,
+  running: false,
+  tab: null,
+  checkServerInterval: null,
+  retrievingMessageFromServer: false,
+  corrlinks_account: null,
+  lastMessage: null,
 };
 
 
 
 chrome.action.onClicked.addListener(function() {
-  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+  chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  }, function(tabs) {
     if (!STATE.running) {
       start();
     } else {
@@ -60,16 +63,21 @@ function sendNewMessageNotification(data) {
 
 
 
-if(!STATE.tab) return
+  if (!STATE.tab) return
 
-    const fn = 'sendNewMessageNotification:';
-    try {
-        const msg = { message: "NEW_MESSAGE_FROM_WHATSAPP", data: data };
-        console.debug(fn, 'sending', { msg });
-        chrome.tabs.sendMessage(STATE.tab.id, msg);
-    } catch (error) {
-        console.warn(fn, 'Error sending message:', error);
-    }
+  const fn = 'sendNewMessageNotification:';
+  try {
+    const msg = {
+      message: "NEW_MESSAGE_FROM_WHATSAPP",
+      data: data
+    };
+    console.debug(fn, 'sending', {
+      msg
+    });
+    chrome.tabs.sendMessage(STATE.tab.id, msg);
+  } catch (error) {
+    console.warn(fn, 'Error sending message:', error);
+  }
 }
 
 
@@ -77,7 +85,10 @@ function start() {
   const fn = 'Trying to initiate...';
   if (STATE.running) return false;
 
-  chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
+  chrome.tabs.query({
+    currentWindow: true,
+    active: true
+  }, function(tabs) {
     const tab = tabs[0];
     STATE.tab = tab;
 
@@ -103,7 +114,9 @@ function stop() {
   console.debug(fn, 'stopping integration');
   chrome.action.setIcon(offIcon);
 
-  const msg = { message: "STOP_INTEGRATION" };
+  const msg = {
+    message: "STOP_INTEGRATION"
+  };
   if (STATE.tab) sendMessageToTab(STATE.tab.id, msg);
   stopServerCheck()
   resetState();
@@ -137,12 +150,12 @@ function isValidSite(tab) {
     console.debug('Invalid title:', tab.title);
     return false; // Invalid title
   }
-  
+
   if (!tab.url.includes(C.WEBSITE_DETAILS.HOST)) {
     console.debug('Invalid host:', tab.url);
     return false; // Invalid host
   }
-  
+
   return true
 }
 
@@ -152,7 +165,9 @@ function showAlert(tabID, tabURL, message) {
   if (tabURL?.startsWith("chrome://")) return;
 
   chrome.scripting.executeScript({
-    target: { tabId: tabID },
+    target: {
+      tabId: tabID
+    },
     func: (alertMessage) => alert(alertMessage),
     args: [message],
   });
@@ -175,130 +190,143 @@ function sendMessageToTab(tabId, message) {
 
 
 async function retrieveMessageFromServer() {
-    if (!STATE.corrlinks_account) return;
+  if (!STATE.corrlinks_account) return;
 
 
 
-if(STATE.lastMessage)
-{
-sendNewMessageNotification(STATE.lastMessage)
-STATE.lastMessage=null
-return
-}
+  if (STATE.lastMessage) {
+    sendNewMessageNotification(STATE.lastMessage)
+    STATE.lastMessage = null
+    return
+  }
 
-    const fn = 'retrieveMessageFromServer:';
-    
-    STATE.retrievingMessageFromServer = new Date();
-    const url = C.SERVER.GET_NEXT_MESSAGE + '?corrlinks_account=' + STATE.corrlinks_account;
-    const config = {
-        method: 'GET',
-        headers: { "Content-Type": "application/json" },
-    };
-
-    try {
-        let r = await fetch(url, config);
-        STATE.retrievingMessageFromServer = false;
-        if (r.status === 204) {
-            console.log(fn, 'No messages to retrieve.');
-            return;
-        }
-        if (!r.ok) {
-            console.warn(fn, `HTTP error! Status: ${r.status}`);
-            return null;
-        }
-        const data = await r.json();
-        console.debug(fn, 'Retrieved a message', data);
-        sendNewMessageNotification(data);
-    } catch (e) {
-        STATE.retrievingMessageFromServer = false;
-        if (e.message === 'Failed to fetch') {
-            console.warn(`Looks like the backend server is down. Please check.`);
-        }
-        console.error(fn, e);
+  const fn = 'retrieveMessageFromServer:';
+  STATE.retrievingMessageFromServer = new Date();
+  const url = C.SERVER.GET_NEXT_MESSAGE + '?corrlinks_account=' + STATE.corrlinks_account;
+  const config = {
+    method: 'GET',
+    headers: {
+      "Content-Type": "application/json"
+    },
+  };
+  try {
+    let r = await fetch(url, config);
+    STATE.retrievingMessageFromServer = false;
+    if (r.status === 204) {
+      console.log(fn, 'No messages to retrieve.');
+      return;
     }
+    if (!r.ok) {
+      console.warn(fn, `HTTP error! Status: ${r.status}`);
+      return null;
+    }
+    const data = await r.json();
+    console.debug(fn, 'Retrieved a message', data);
+    sendNewMessageNotification(data);
+  } catch (e) {
+    STATE.retrievingMessageFromServer = false;
+    if (e.message === 'Failed to fetch') {
+      console.warn(`Looks like the backend server is down. Please check.`);
+    }
+    console.error(fn, e);
+  }
 }
-
 
 let serverPolling = false;
 
 function startServerCheck() {
-    if (!serverPolling) {
-        serverPolling = true; 
-        console.log("Server polling started");
-
-        STATE.checkServerInterval = setInterval(function () {
-        retrieveMessageFromServer();
-        }, C.DEFAULTS.UPDATE_CONTENT_STATE_SECONDS * 1000);
-    }
+  if (!serverPolling) {
+    serverPolling = true;
+    console.log("Server polling started");
+    STATE.checkServerInterval = setInterval(function() {
+      retrieveMessageFromServer();
+    }, C.DEFAULTS.UPDATE_CONTENT_STATE_SECONDS * 1000);
+  }
 }
 
 function stopServerCheck() {
-    serverPolling = false; 
-    clearInterval(STATE.checkServerInterval);
-    STATE.checkServerInterval = null;
-    console.log("Server polling stopped");
+  serverPolling = false;
+  clearInterval(STATE.checkServerInterval);
+  STATE.checkServerInterval = null;
+  console.log("Server polling stopped");
 }
 
 
 
 function sendMessageDeliveryUpdateToServer(data, response) {
-    const fn = 'sendMessageDeliveryUpdateToServer:';
-    const url = C.SERVER.NOTIFY_DELIVERY_STATUS;
-    const config = {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    };
+  const fn = 'sendMessageDeliveryUpdateToServer:';
+  const url = C.SERVER.NOTIFY_DELIVERY_STATUS;
+  const config = {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data),
+  };
 
-    console.debug(fn, { config });
+  console.debug(fn, {
+    config
+  });
 
-    fetch(url, config)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log(fn, 'Response:', data);  
-        })
-        .catch(error => {
-            console.error(fn, 'Error occurred:', error); 
-        });
+  fetch(url, config)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log(fn, 'Response:', data);
+    })
+    .catch(error => {
+      console.error(fn, 'Error occurred:', error);
+    });
 }
 
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
-    sendResponse({ state: STATE.running });
+    sendResponse({
+      state: STATE.running
+    });
   }
   if (request.action === 'setState') {
-      stop();
+    stop();
 
   }
   if (request.action === "SET_CORRLINKS_ACCOUNT") {
-		STATE.corrlinks_account = request.corrlinks_account;
-		console.log('STATE.corrlinks_account set to ' + STATE.corrlinks_account);
+    STATE.corrlinks_account = request.corrlinks_account;
+    console.log('STATE.corrlinks_account set to ' + STATE.corrlinks_account);
+
+
+
+
   }
   if (request.type === 'MESSAGE_DELIVERED') {
-        const uniqueID = request.id;  
-	sendMessageDeliveryUpdateToServer({ id: uniqueID, status: "MESSAGE_DELIVERED" });
+    const uniqueID = request.id;
+    sendMessageDeliveryUpdateToServer({
+      id: uniqueID,
+      status: "MESSAGE_DELIVERED"
+    });
   }
- if (request.type === 'MESSAGE_COULD_NOT_BE_DELIVERED') {
-        const uniqueID = request.id;  
-	sendMessageDeliveryUpdateToServer({ id: uniqueID, status: "MESSAGE_COULD_NOT_BE_DELIVERED" });
+  if (request.type === 'MESSAGE_COULD_NOT_BE_DELIVERED') {
+    const uniqueID = request.id;
+    sendMessageDeliveryUpdateToServer({
+      id: uniqueID,
+      status: "MESSAGE_COULD_NOT_BE_DELIVERED"
+    });
   }
-if (request.type === 'USER_NOT_FOUND_IN_CORRLINKS') {
-        const uniqueID = request.id;  
-	sendMessageDeliveryUpdateToServer({ id: uniqueID, status: "USER_NOT_FOUND_IN_CORRLINKS" });
-
-
-
+  if (request.type === 'USER_NOT_FOUND_IN_CORRLINKS') {
+    const uniqueID = request.id;
+    sendMessageDeliveryUpdateToServer({
+      id: uniqueID,
+      status: "USER_NOT_FOUND_IN_CORRLINKS"
+    });
   }
   if (request.action === 'ADD_MSG_TO_QUEUE') {
-	STATE.lastMessage= request.message;
+    console.log("Msg added to queue")
+    STATE.lastMessage = request.message;
   }
-
 
 });
 
@@ -314,16 +342,12 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.tabs.onUpdated.addListener((updatedTabId, changeInfo, tab) => {
   if (STATE.tab && STATE.tab.id === updatedTabId) {
     if (changeInfo.status === 'complete') {
-	 const msg = {
-         message: "CHECK_PAGE_TYPE",
-    };
+      const msg = {
+        message: "CHECK_PAGE_TYPE",
+      };
 
-    sendMessageToTab(tab.id, msg);
+      sendMessageToTab(tab.id, msg);
 
     }
   }
 });
-
-
-
-
