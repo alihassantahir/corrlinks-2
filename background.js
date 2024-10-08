@@ -264,6 +264,10 @@ function startServerCheck() {
   if (!serverPolling) {
     serverPolling = true;
     console.log("Server polling started");
+
+  clearInterval(STATE.checkServerInterval); //Ensure previous one's cleared..
+  STATE.checkServerInterval = null;
+    
     STATE.checkServerInterval = setInterval(function() {
       retrieveMessageFromServer();
     }, C.DEFAULTS.UPDATE_CONTENT_STATE_SECONDS * 1000);
