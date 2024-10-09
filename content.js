@@ -31,7 +31,6 @@ async function startUp(reload) {
         }
       }
     } catch (error) {
-      console.error("Error inside getCorrlinksAccount block:", error);
     }
 
     navigate();
