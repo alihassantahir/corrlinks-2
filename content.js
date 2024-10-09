@@ -291,12 +291,25 @@ function getPageType() {
 
 
 function addMessagetoQueue(msg) {
+
+ let data = msg.data.message 
+   if (!data) return
+    let id = null,
+    subject = null,
+    body = null
+    id = data.corrlinks_id;
+    subject = data.subject;
+    messagebody = data.body;
+    msgID = data.id;
+
+if(!id || !subject || !messagebody || !msgID) return 
   chrome.runtime.sendMessage({
     action: 'ADD_MSG_TO_QUEUE',
     message: msg
 
   });
 }
+
 
 function setState() {
   chrome.runtime.sendMessage({
