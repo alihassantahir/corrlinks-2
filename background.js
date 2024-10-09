@@ -43,8 +43,6 @@ let STATE = {
   messageQueue: [],
 };
 
-
-
 chrome.action.onClicked.addListener(function() {
   chrome.tabs.query({
     active: true,
@@ -258,12 +256,22 @@ function startServerCheck() {
     serverPolling = true;
     console.log("Server polling started");
 
-    clearInterval(STATE.checkServerInterval); //Ensure previous one's cleared..
+    clearInterval(STATE.checkServerInterval); // Ensure previous one's cleared
     STATE.checkServerInterval = null;
-
     STATE.checkServerInterval = setInterval(function() {
+      const msg = {
+        message: "POLLING_SERVER",
+      };
+      console.log("Polling the server...");
+      setTimeout(() => {
+        if (STATE.tab) sendMessageToTab(STATE.tab.id, msg);
+
+
+      }, 5000);
+
       retrieveMessageFromServer();
     }, C.DEFAULTS.UPDATE_CONTENT_STATE_SECONDS * 1000);
+
   }
 }
 
@@ -309,6 +317,8 @@ function sendMessageDeliveryUpdateToServer(data, response) {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
+
+
     sendResponse({
       state: STATE.running
     });
@@ -316,6 +326,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'setState') {
     stop();
   }
+
+
   if (request.action === "SET_CORRLINKS_ACCOUNT") {
     if (STATE.corrlinks_account !== null && STATE.corrlinks_account !== request.corrlinks_account) {
       STATE.messageQueue = []; // Clear the message queue
@@ -359,7 +371,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     for (let i = 0; i < STATE.messageQueue.length; i++) {
 
       const existingMessage = STATE.messageQueue[i];
-      if (existingMessage.data.message.id === newMessageId) {  //Duplicate check... 
+      if (existingMessage.data.message.id === newMessageId) { //Duplicate check... 
         exists = true;
         break;
       }
@@ -379,18 +391,24 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   }
 });
 
-
 chrome.tabs.onUpdated.addListener((updatedTabId, changeInfo, tab) => {
   if (STATE.tab && STATE.tab.id === updatedTabId) {
     if (changeInfo.status === 'complete') {
+      STATE.tab = tab;
       const msg = {
-        message: "CHECK_PAGE_TYPE",
+        message: "CHECK_PAGE_TYPE"
       };
       setTimeout(() => {
+        const result = isValidSite(STATE.tab);
+        if (!result.isValid) {
+          console.log("User navigated to some other website. Aborting...")
+          stop();
+          return;
+        }
         sendMessageToTab(tab.id, msg);
+
       }, 1000);
+
     }
-
-
   }
 });
