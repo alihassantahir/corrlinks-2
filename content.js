@@ -1,8 +1,7 @@
 const STATE = {
-  stopNow: false,
+  stopNow: true,
   currentMessage: null
 };
-
 
 
 window.onload = () => {
@@ -12,13 +11,10 @@ window.onload = () => {
 };
 
 async function startUp(reload) {
+  if(STATE.stopNow) return
   const fn = 'startUp:';
-  STATE.stopNow = false;
-
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
   try {
-    // Wait for 1 second
     await delay(1000);
 
     try {
@@ -47,7 +43,6 @@ async function startUp(reload) {
 }
 
 function requestState() {
-
   chrome.runtime.sendMessage({
     action: 'getState'
   }, (response) => {
@@ -56,7 +51,6 @@ function requestState() {
 
       if (currentState) {
         startUp();
-
 
       }
     }
@@ -70,12 +64,12 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       return;
 
     case "START_INTEGRATION":
+      STATE.stopNow = false;
       startUp(true);
       return;
 
     case "STOP_INTEGRATION":
       STATE.stopNow = true;
-
       return;
 
     case "NEW_MESSAGE_FROM_WHATSAPP":
@@ -125,7 +119,7 @@ function processMessage(message) {
   if (getPageType() === "NEW_MESSAGE") {
     STATE.currentMessage = message;
     let data = message.data.message //Unsure yet the server runs out of messages before I can test. Only this line needs to be checked
-
+     
     if (!data) return
     let id = null,
       subject = null,
@@ -337,7 +331,7 @@ function hasLoggedOut() { // This fn sends a message to BG script to ABORT if th
 
 
 function navigate(bypass) {
-  // To compose message page
+ // To compose message page
   if (window.location.href !== "https://www.corrlinks.com/en-US/mailbox/compose") {
     window.location.href = "https://www.corrlinks.com/en-US/mailbox/compose";
   } else if (bypass) {
