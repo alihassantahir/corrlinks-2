@@ -15,27 +15,31 @@ async function startUp(reload) {
   const fn = 'startUp:';
   STATE.stopNow = false;
 
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   try {
-    setTimeout(async () => {
-      try {
-        const corrlinks_account = await getCorrlinksAccount();
+    // Wait for 1 second
+    await delay(1000);
 
-        if (corrlinks_account) {
-          sendMessage({
-            action: "SET_CORRLINKS_ACCOUNT",
-            corrlinks_account
-          });
+    try {
+      const corrlinks_account = await getCorrlinksAccount();
 
-          if (reload) {
-            window.location.href = window.location.href;
-          }
+      if (corrlinks_account) {
+        sendMessage({
+          action: "SET_CORRLINKS_ACCOUNT",
+          corrlinks_account
+        });
+
+        if (reload) {
+          window.location.href = window.location.href;
         }
-      } catch (error) {
-        console.error("Error inside setTimeout:", error);
       }
-    }, 1000);
+    } catch (error) {
+      console.error("Error inside getCorrlinksAccount block:", error);
+    }
 
     navigate();
+
   } catch (error) {
     console.error("Error in startUp function:", error);
     return;
