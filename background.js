@@ -61,8 +61,6 @@ chrome.action.onClicked.addListener(function() {
 
 function sendNewMessageNotification(data) {
 
-
-
   if (!STATE.tab) return
 
   const fn = 'sendNewMessageNotification:';
@@ -99,8 +97,6 @@ function start() {
       return;
     }
 
-
-
     console.debug(fn, 'Sender extension successfully initiated...');
     chrome.action.setIcon(onIcon);
     STATE.running = true;
@@ -124,8 +120,6 @@ function stop() {
   };
   if (STATE.tab) sendMessageToTab(STATE.tab.id, msg);
   stopServerCheck()
-
-
 
   resetState();
 }
@@ -216,12 +210,13 @@ function sendMessageToTab(tabId, message) {
 async function retrieveMessageFromServer() {
   if (!STATE.corrlinks_account) return;
 
-  // First, send queued messages if available (Robust and feasible: as rarely msgs are queued - So minor delay...)
+  // First, send queued messages if available (Robust and feasible: as rarely msgs will be queued - So minor delay...)
   if (STATE.messageQueue.length > 0) {
     const queuedMessage = STATE.messageQueue.shift();
     sendNewMessageNotification(queuedMessage);
     return;
   }
+
   const fn = 'retrieveMessageFromServer:';
   STATE.retrievingMessageFromServer = new Date();
   const url = C.SERVER.GET_NEXT_MESSAGE + '?corrlinks_account=' + STATE.corrlinks_account;
@@ -256,8 +251,6 @@ async function retrieveMessageFromServer() {
 }
 
 
-
-
 let serverPolling = false;
 
 function startServerCheck() {
@@ -265,9 +258,9 @@ function startServerCheck() {
     serverPolling = true;
     console.log("Server polling started");
 
-  clearInterval(STATE.checkServerInterval); //Ensure previous one's cleared..
-  STATE.checkServerInterval = null;
-    
+    clearInterval(STATE.checkServerInterval); //Ensure previous one's cleared..
+    STATE.checkServerInterval = null;
+
     STATE.checkServerInterval = setInterval(function() {
       retrieveMessageFromServer();
     }, C.DEFAULTS.UPDATE_CONTENT_STATE_SECONDS * 1000);
@@ -335,7 +328,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'MESSAGE_DELIVERED') {
     const uniqueID = request.id;
-    if(!uniqueID) return
+    if (!uniqueID) return
     sendMessageDeliveryUpdateToServer({
       id: uniqueID,
       status: "MESSAGE_DELIVERED"
@@ -343,7 +336,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.type === 'MESSAGE_COULD_NOT_BE_DELIVERED') {
     const uniqueID = request.id;
-    if(!uniqueID) return
+    if (!uniqueID) return
     sendMessageDeliveryUpdateToServer({
       id: uniqueID,
       status: "MESSAGE_COULD_NOT_BE_DELIVERED"
@@ -351,21 +344,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.type === 'USER_NOT_FOUND_IN_CORRLINKS') {
     const uniqueID = request.id;
-    if(!uniqueID) return
+    if (!uniqueID) return
+
     sendMessageDeliveryUpdateToServer({
       id: uniqueID,
       status: "USER_NOT_FOUND_IN_CORRLINKS"
     });
   }
   if (request.action === 'ADD_MSG_TO_QUEUE') {
-    const exists = STATE.messageQueue.some(existingMessage =>
-      JSON.stringify(existingMessage) === JSON.stringify(request.message)
-    );
-    if (!exists) {
-      STATE.messageQueue.push(request.message); // Enqueue the new message
-      console.log("Msg added to queue");
 
+    const newMessageId = request.message.data.message.id;
+    if (!newMessageId) return
+    let exists = false;
+    for (let i = 0; i < STATE.messageQueue.length; i++) {
+
+      const existingMessage = STATE.messageQueue[i];
+      if (existingMessage.data.message.id === newMessageId) {  //Duplicate check... 
+        exists = true;
+        break;
+      }
     }
+    if (!exists)
+      STATE.messageQueue.push(request.message); // Enqueue the new message
+
   }
 
 });
