@@ -1,8 +1,10 @@
+let REFRESH_INTERVAL=10;
+
 const STATE = {
   stopNow: true,
   currentMessage: null
-};
 
+};
 
 window.onload = () => {
   startUp()
@@ -69,13 +71,21 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
     case "STOP_INTEGRATION":
       STATE.stopNow = true;
+      navigate(true)
       return;
 
     case "NEW_MESSAGE_FROM_WHATSAPP":
       processMessage(request.data);
       return;
 
+    case "POLLING_SERVER":
+      console.log("Polling the server...");
+      requestState(); // Generating "event" to prevent SW from going idle
+      return;
+
+
   }
+
 });
 
 
@@ -117,8 +127,8 @@ function processMessage(message) {
   }
   if (getPageType() === "NEW_MESSAGE") {
     STATE.currentMessage = message;
-    let data = message.data.message //Unsure yet the server runs out of messages before I can test. Only this line needs to be checked
-     
+    let data = message.data.message
+    
     if (!data) return
     let id = null,
       subject = null,
@@ -426,3 +436,4 @@ function simulateClick(element, nofocus) {
 function sendMessage(message) {
   chrome.runtime.sendMessage(null, message);
 }
+
