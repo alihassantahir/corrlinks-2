@@ -140,7 +140,8 @@ function handleInvalidSite(tab, msg) {
 
 
 function isValidSite(tab) {
-
+if(tab)
+{
   if (tab.url.includes(C.WEBSITE_DETAILS.LOGIN)) {
     console.debug('Invalid host:', tab.url);
     return {
@@ -170,6 +171,7 @@ function isValidSite(tab) {
     isValid: true,
     msg: 'Site is valid.'
   };
+}
 }
 
 
