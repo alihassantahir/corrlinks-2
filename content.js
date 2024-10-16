@@ -51,22 +51,43 @@ function requestState() {
       const currentState = response.state;
 
       if (currentState) {
-        startUp();
+     if(isLoginPage())
+{
+autoLogin()
+return
+}
+       startUp();
+ 
+
+
 
       }
+     
+
+
     }
   });
 }
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   switch (request.message) {
-    case "CHECK_PAGE_TYPE":
-      hasLoggedOut();
-      return;
 
     case "START_INTEGRATION":
       STATE.stopNow = false;
       startUp(true);
+
+      const corrlinks_account = await getCorrlinksAccount();
+if (corrlinks_account) {
+
+  const password = prompt("Please enter password for " + corrlinks_account + ":");
+
+  // Send the message with both account and password
+  sendMessage({
+    action: "SET_CORRLINKS_ACCOUNT",
+    corrlinks_account,
+    password  // Include the password
+  });
+}
       return;
 
     case "STOP_INTEGRATION":
@@ -332,8 +353,6 @@ function isComposePage() {
 }
 
 
-
-
 function isLoginPage() {
   const targetUrls = [
     'https://www.corrlinks.com/en-US/login',
@@ -341,14 +360,6 @@ function isLoginPage() {
   ];
 
   return targetUrls.some(url => window.location.href === url);
-}
-
-function hasLoggedOut() { // This fn sends a message to BG script to ABORT if the user is logged out... 
-
-  if (isLoginPage()) {
-    setState();
-    STATE.stopNow = true;
-  }
 }
 
 
@@ -424,12 +435,21 @@ function simulateClick(element, nofocus) {
     view: window,
   });
 
+  const clickEvent = new MouseEvent('click', {
+    bubbles: true,
+    cancelable: true,
+    view: window,
+  });
+
   element.dispatchEvent(mouseDownEvent);
 
   setTimeout(() => {
     element.dispatchEvent(mouseUpEvent);
     if (!nofocus)
       element.focus();
+
+    element.dispatchEvent(clickEvent);
+
   }, 100);
 }
 
@@ -437,3 +457,89 @@ function sendMessage(message) {
   chrome.runtime.sendMessage(null, message);
 }
 
+
+function blurElement(element) {
+    if (!element) return; 
+
+    const event = new FocusEvent('blur', { 
+        bubbles: true,
+        cancelable: true,
+        view: window
+    });
+
+    element.dispatchEvent(event);
+}
+
+let lastLoginTry = null;
+
+function autoLogin() {
+  const currentTime = new Date();
+
+  // Throttling logic for login attempts
+  if (lastLoginTry && (currentTime - lastLoginTry < 8000)) {
+    return; 
+  } else if (lastLoginTry && (currentTime - lastLoginTry > 30000)) {
+    return; 
+  }
+
+  lastLoginTry = currentTime;
+
+  fetchEmail((username) => {
+    if (!username) return; // Exit if username is not retrieved
+
+    fetchPassword((password) => {
+      if (!password) return; // Exit if password is not retrieved
+
+      const emailField = document.querySelector('input[formcontrolname="email"]');
+      const passwordField = document.querySelector('input[formcontrolname="password"]');
+
+      if (emailField && passwordField) {
+        setField(emailField, username);
+        setField(passwordField, password);
+        
+        const loginButton = Array.from(document.querySelectorAll('button'))
+                                  .find(button => button.innerText === 'Login');
+
+        setTimeout(() => {
+          if (loginButton) {
+            loginButton.click();
+          }
+        }, 3000);
+      }
+    });
+  });
+}
+
+function setField(field, value) {
+  if (field) {
+    simulateClick(field);
+    field.value = value;
+    simulateInput(field);
+    blurElement(field);
+  }
+}
+
+function fetchEmail(callback) {
+  chrome.runtime.sendMessage({ action: 'getEmailAddress' }, (response) => {
+    if (response.email) {
+      callback(response.email);
+    } else {
+	setState()
+      console.error("Failed to retrieve email address.");
+      callback(null);
+    }
+  });
+}
+
+function fetchPassword(callback) {
+  chrome.runtime.sendMessage({ action: 'getPswd' }, (response) => {
+    if (response.pswd) {
+      callback(response.pswd);
+    } else {
+
+	setState()
+      console.error("Failed to retrieve password.");
+      callback(null);
+    }
+  });
+}
