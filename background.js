@@ -40,6 +40,7 @@ let STATE = {
   checkServerInterval: null,
   retrievingMessageFromServer: false,
   corrlinks_account: null,
+  pswd:null,
   messageQueue: [],
 };
 
@@ -56,6 +57,17 @@ chrome.action.onClicked.addListener(function() {
     }
   });
 });
+
+function requestCorrlinksEmail()
+{
+	return STATE.corrlinks_account;
+}
+
+function requestCorrlinksPswd()
+{
+	return STATE.pswd;
+}
+
 
 function sendNewMessageNotification(data) {
 
@@ -90,7 +102,7 @@ function start() {
 
     const result = isValidSite(tab);
 
-    if (!result.isValid) {
+    if (result && !result.isValid) {
       handleInvalidSite(tab, result.msg);
       return;
     }
@@ -139,10 +151,10 @@ function handleInvalidSite(tab, msg) {
 
 
 
-function isValidSite(tab) {
+function isValidSite(tab, loggedOutCheck) {
 if(tab)
 {
-  if (tab.url.includes(C.WEBSITE_DETAILS.LOGIN)) {
+  if (tab.url.includes(C.WEBSITE_DETAILS.LOGIN) && !loggedOutCheck) {
     console.debug('Invalid host:', tab.url);
     return {
       isValid: false,
@@ -191,6 +203,7 @@ function showAlert(tabID, tabURL, message) {
 function resetState() {
   STATE.running = false;
   STATE.tab = null;
+  STATE.pswd=null;
   STATE.checkServerInterval = null;
   STATE.retrievingMessageFromServer = null;
   chrome.action.setIcon(offIcon);
@@ -328,17 +341,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'setState') {
     stop();
   }
-
-
+  if (request.action === 'getEmailAddress') {
+ 	sendResponse({ email: requestCorrlinksEmail() });
+  }
+ if (request.action === 'getPswd') {
+ 	sendResponse({ pswd: requestCorrlinksPswd() });
+  }
   if (request.action === "SET_CORRLINKS_ACCOUNT") {
     if (STATE.corrlinks_account !== null && STATE.corrlinks_account !== request.corrlinks_account) {
       STATE.messageQueue = []; // Clear the message queue
       console.log('Message queue cleared due to account change');
     }
-
+    if(request.corrlinks_account)
     STATE.corrlinks_account = request.corrlinks_account;
     console.log('STATE.corrlinks_account set to ' + STATE.corrlinks_account);
+    if(request.password)
+    STATE.pswd=request.password
   }
+
 
   if (request.type === 'MESSAGE_DELIVERED') {
     const uniqueID = request.id;
@@ -365,6 +385,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       status: "USER_NOT_FOUND_IN_CORRLINKS"
     });
   }
+
   if (request.action === 'ADD_MSG_TO_QUEUE') {
 
     const newMessageId = request.message.data.message.id;
@@ -386,6 +407,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 
+
+
 chrome.tabs.onRemoved.addListener((tabId) => {
   if (STATE.tab && STATE.tab.id === tabId) {
     resetState();
@@ -397,20 +420,24 @@ chrome.tabs.onUpdated.addListener((updatedTabId, changeInfo, tab) => {
   if (STATE.tab && STATE.tab.id === updatedTabId) {
     if (changeInfo.status === 'complete') {
       STATE.tab = tab;
-      const msg = {
-        message: "CHECK_PAGE_TYPE"
-      };
       setTimeout(() => {
-        const result = isValidSite(STATE.tab);
-        if (!result.isValid) {
+        const result = isValidSite(STATE.tab, true);
+        if (result && !result.isValid) {
           console.log("User navigated to some other website. Aborting...")
           stop();
           return;
         }
-        sendMessageToTab(tab.id, msg);
 
       }, 1000);
 
     }
   }
 });
+
+
+
+
+
+
+
+
