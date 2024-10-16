@@ -29,8 +29,11 @@ The extension also notifies the backend of successful sending and failure.
 
 To stop an extension, click the same button again or close the tab (Reloading the tab will not stop the Extension)
 
+
 ## Automatic Termination:
-When the user logs out after activating the extension, it will automatically HALT itself ASAP. 
+When the closes the tab/navigates to some other website, it will automatically HALT itself in the next cycle.
 Similarly, it'll stop polling the server when the user navigates to any website other than Corrlinks.
 
 
+##Automatic Login:
+When the user logs out or is logged out by the Corrlinks website, the extension will automatically log in. It does this by requesting the password when the extension is initiated after logging into Corrlinks. The email is already automatically fetched by the extension.
