@@ -106,7 +106,10 @@ function start() {
       handleInvalidSite(tab, result.msg);
       return;
     }
-
+    else if(!result)
+    {
+	return
+    }
     console.debug(fn, 'Sender extension successfully initiated...');
     chrome.action.setIcon(onIcon);
     STATE.running = true;
@@ -149,11 +152,15 @@ function handleInvalidSite(tab, msg) {
   showAlert(tab.id, tab.url, msg);
 }
 
-
-
 function isValidSite(tab, loggedOutCheck) {
-if(tab)
+if(!tab)
 {
+  return {
+    isValid: false,
+    msg: 'Tab not fully loaded. Please try again...'
+  };
+}
+
   if (tab.url.includes(C.WEBSITE_DETAILS.LOGIN) && !loggedOutCheck) {
     console.debug('Invalid host:', tab.url);
     return {
@@ -183,8 +190,11 @@ if(tab)
     isValid: true,
     msg: 'Site is valid.'
   };
+  
 }
-}
+
+
+
 
 
 
