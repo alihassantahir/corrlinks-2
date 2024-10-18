@@ -79,13 +79,11 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       const corrlinks_account = await getCorrlinksAccount();
 if (corrlinks_account) {
 
-  const password = prompt("Please enter password for " + corrlinks_account + ":");
 
   // Send the message with both account and password
   sendMessage({
     action: "SET_CORRLINKS_ACCOUNT",
-    corrlinks_account,
-    password  // Include the password
+    corrlinks_account
   });
 }
       return;
@@ -475,7 +473,6 @@ let lastLoginTry = null;
 function autoLogin() {
   const currentTime = new Date();
 
-  // Throttling logic for login attempts
   if (lastLoginTry && (currentTime - lastLoginTry < 8000)) {
     return; 
   } else if (lastLoginTry && (currentTime - lastLoginTry > 30000)) {
@@ -484,18 +481,12 @@ function autoLogin() {
 
   lastLoginTry = currentTime;
 
-  fetchEmail((username) => {
-    if (!username) return; // Exit if username is not retrieved
-
-    fetchPassword((password) => {
-      if (!password) return; // Exit if password is not retrieved
-
       const emailField = document.querySelector('input[formcontrolname="email"]');
       const passwordField = document.querySelector('input[formcontrolname="password"]');
 
       if (emailField && passwordField) {
-        setField(emailField, username);
-        setField(passwordField, password);
+        setField(emailField);
+        setField(passwordField);
         
         const loginButton = Array.from(document.querySelectorAll('button'))
                                   .find(button => button.innerText === 'Login');
@@ -506,40 +497,16 @@ function autoLogin() {
           }
         }, 3000);
       }
-    });
-  });
+
+
 }
 
-function setField(field, value) {
-  if (field) {
+function setField(field) {
     simulateClick(field);
-    field.value = value;
     simulateInput(field);
     blurElement(field);
-  }
 }
 
-function fetchEmail(callback) {
-  chrome.runtime.sendMessage({ action: 'getEmailAddress' }, (response) => {
-    if (response.email) {
-      callback(response.email);
-    } else {
-	setState()
-      console.error("Failed to retrieve email address.");
-      callback(null);
-    }
-  });
-}
 
-function fetchPassword(callback) {
-  chrome.runtime.sendMessage({ action: 'getPswd' }, (response) => {
-    if (response.pswd) {
-      callback(response.pswd);
-    } else {
 
-	setState()
-      console.error("Failed to retrieve password.");
-      callback(null);
-    }
-  });
-}
+
