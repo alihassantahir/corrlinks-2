@@ -35,5 +35,5 @@ When the closes the tab/navigates to some other website, it will automatically H
 Similarly, it'll stop polling the server when the user navigates to any website other than Corrlinks.
 
 
-##Automatic Login:
-When the user logs out or is logged out by the Corrlinks website, the extension will automatically log in. It does this by requesting the password when the extension is initiated after logging into Corrlinks. The email is already automatically fetched by the extension.
+## Automatic Login:
+When the user logs out or is logged out by the Corrlinks website whilst the extension was running, the extension will automatically log in. This will only work when the Chrome password & email have been stored in Google Profile/Password manager..
