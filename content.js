@@ -58,7 +58,6 @@ function requestState() {
         if (isLoginPage()) {
 setTimeout(()=>
 {
-          document.title="INITIATE_AUTOLOGIN CORRLINKS"
           autoLogin()
           return
 
