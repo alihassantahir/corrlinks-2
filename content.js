@@ -7,7 +7,11 @@ const STATE = {
 };
 
 window.onload = () => {
-  startUp()
+  if(!isLoginPage())
+  {
+    startUp()
+  }
+  
   requestState()
 
 };
@@ -51,23 +55,29 @@ function requestState() {
       const currentState = response.state;
 
       if (currentState) {
-     if(isLoginPage())
+        if (isLoginPage()) {
+setTimeout(()=>
 {
-autoLogin()
-return
-}
-       startUp();
- 
+          document.title="INITIATE_AUTOLOGIN CORRLINKS"
+          autoLogin()
+          return
+
+},5000);
+        }
+
+        startUp();
+
 
 
 
       }
-     
+
 
 
     }
   });
 }
+
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   switch (request.message) {
