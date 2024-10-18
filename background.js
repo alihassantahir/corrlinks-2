@@ -40,7 +40,6 @@ let STATE = {
   checkServerInterval: null,
   retrievingMessageFromServer: false,
   corrlinks_account: null,
-  pswd:null,
   messageQueue: [],
 };
 
@@ -57,16 +56,6 @@ chrome.action.onClicked.addListener(function() {
     }
   });
 });
-
-function requestCorrlinksEmail()
-{
-	return STATE.corrlinks_account;
-}
-
-function requestCorrlinksPswd()
-{
-	return STATE.pswd;
-}
 
 
 function sendNewMessageNotification(data) {
@@ -213,7 +202,6 @@ function showAlert(tabID, tabURL, message) {
 function resetState() {
   STATE.running = false;
   STATE.tab = null;
-  STATE.pswd=null;
   STATE.checkServerInterval = null;
   STATE.retrievingMessageFromServer = null;
   chrome.action.setIcon(offIcon);
@@ -342,8 +330,6 @@ function sendMessageDeliveryUpdateToServer(data, response) {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
-
-
     sendResponse({
       state: STATE.running
     });
@@ -351,22 +337,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'setState') {
     stop();
   }
-  if (request.action === 'getEmailAddress') {
- 	sendResponse({ email: requestCorrlinksEmail() });
-  }
- if (request.action === 'getPswd') {
- 	sendResponse({ pswd: requestCorrlinksPswd() });
-  }
   if (request.action === "SET_CORRLINKS_ACCOUNT") {
     if (STATE.corrlinks_account !== null && STATE.corrlinks_account !== request.corrlinks_account) {
       STATE.messageQueue = []; // Clear the message queue
       console.log('Message queue cleared due to account change');
     }
-    if(request.corrlinks_account)
+    if(request.corrlinks_account){
     STATE.corrlinks_account = request.corrlinks_account;
     console.log('STATE.corrlinks_account set to ' + STATE.corrlinks_account);
-    if(request.password)
-    STATE.pswd=request.password
+    }
   }
 
 
