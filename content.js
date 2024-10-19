@@ -13,7 +13,6 @@ window.onload = () => {
   }
   
   requestState()
-
 };
 
 async function startUp(reload) {
@@ -56,27 +55,21 @@ function requestState() {
 
       if (currentState) {
         if (isLoginPage()) {
-setTimeout(()=>
-{
+	console.log("Initiating Autologin...")
+	setTimeout(()=>
+	{
           autoLogin()
           return
 
-},5000);
+	},1000);
         }
 
         startUp();
-
-
-
-
       }
-
-
 
     }
   });
 }
-
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   switch (request.message) {
@@ -88,11 +81,13 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       const corrlinks_account = await getCorrlinksAccount();
 if (corrlinks_account) {
 
+  const password = prompt("Please enter password for " + corrlinks_account + ":");
 
   // Send the message with both account and password
   sendMessage({
     action: "SET_CORRLINKS_ACCOUNT",
-    corrlinks_account
+    corrlinks_account,
+    password  // Include the password
   });
 }
       return;
@@ -482,6 +477,7 @@ let lastLoginTry = null;
 function autoLogin() {
   const currentTime = new Date();
 
+  // Throttling logic for login attempts
   if (lastLoginTry && (currentTime - lastLoginTry < 8000)) {
     return; 
   } else if (lastLoginTry && (currentTime - lastLoginTry > 30000)) {
@@ -490,32 +486,99 @@ function autoLogin() {
 
   lastLoginTry = currentTime;
 
-      const emailField = document.querySelector('input[formcontrolname="email"]');
-      const passwordField = document.querySelector('input[formcontrolname="password"]');
+  fetchEmail((username) => {
+    if (!username) return; // Exit if username is not retrieved
 
-      if (emailField && passwordField) {
-        setField(emailField);
-        setField(passwordField);
-        
-        const loginButton = Array.from(document.querySelectorAll('button'))
+    fetchPassword((password) => {
+      if (!password) return; // Exit if password is not retrieved
+
+const loginButton = Array.from(document.querySelectorAll('button'))
                                   .find(button => button.innerText === 'Login');
-
         setTimeout(() => {
           if (loginButton) {
-            loginButton.click();
+		clearForm()
+		login(username, password)
           }
         }, 3000);
-      }
 
-
-}
-
-function setField(field) {
-    simulateClick(field);
-    simulateInput(field);
-    blurElement(field);
+    });
+  });
 }
 
 
 
+function clearForm()
+{
+const elements = document.querySelectorAll('.ng-valid, .ng-touched, .ng-dirty');
 
+elements.forEach(element => {
+    if (element.classList.contains('ng-valid')) {
+        element.classList.remove('ng-valid');
+        element.classList.add('ng-invalid');
+    }
+    
+    if (element.classList.contains('ng-touched')) {
+        element.classList.remove('ng-touched');
+        element.classList.add('ng-untouched');
+    }
+
+    if (element.classList.contains('ng-dirty')) {
+        element.classList.remove('ng-dirty');
+        element.classList.add('ng-pristine');
+    }
+});
+}
+
+
+
+function login(email,password)
+{
+const url = 'https://www.corrlinks.com/api/session';  //A simple post request to this url allows login...
+
+const data = {
+    emailAddress:email,
+    password: password
+};
+
+fetch(url, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+})
+.then(response => response.json())
+.then(data => {
+
+    console.log('Success:', data);
+    navigate()
+
+    
+})
+.catch((error) => {
+    console.error('Error:', error);
+});
+
+
+}
+function fetchEmail(callback) {
+  chrome.runtime.sendMessage({ action: 'getEmailAddress' }, (response) => {
+    if (response.email) {
+      callback(response.email);
+    } else {
+      console.error("Failed to retrieve email address.");
+      callback(null);
+    }
+  });
+}
+
+function fetchPassword(callback) {
+  chrome.runtime.sendMessage({ action: 'getPswd' }, (response) => {
+    if (response.pswd) {
+      callback(response.pswd);
+    } else {
+      console.error("Failed to retrieve password.");
+      callback(null);
+    }
+  });
+}
