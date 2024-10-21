@@ -211,13 +211,14 @@ function showAlert(tabID, tabURL, message) {
 }
 
 function resetState() {
+
+  stopServerCheck()
   STATE.running = false;
   STATE.tab = null;
   STATE.pswd=null;
   STATE.checkServerInterval = null;
   STATE.retrievingMessageFromServer = null;
   chrome.action.setIcon(offIcon);
-  stopServerCheck()
 
 }
 
