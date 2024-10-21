@@ -177,7 +177,6 @@ function processMessage(message) {
               id: id
             });
             navigate(true)
-
           });
       }, 500);
       return;
@@ -222,17 +221,7 @@ function validateMessage(uniqueID) {
             navigate(true)
           }
         }, 3000);
-      } else //Submit button was disabled due to some error let Backend know about it so it can retry?
-      {
-        const deliveredID = {
-          type: 'MESSAGE_COULD_NOT_BE_DELIVERED',
-          id: uniqueID
-        };
-        sendMessage(deliveredID)
-        STATE.currentMessage = null;
-        navigate(true)
       }
-
     }
   }, 1000);
 }
