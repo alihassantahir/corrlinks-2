@@ -211,14 +211,6 @@ function validateMessage(uniqueID) {
             sendMessage(deliveredID)
             STATE.currentMessage = null;
             navigate(true)
-          } else {
-            const deliveredID = {
-              type: 'MESSAGE_COULD_NOT_BE_DELIVERED',
-              id: uniqueID
-            };
-            sendMessage(deliveredID)
-            STATE.currentMessage = null;
-            navigate(true)
           }
         }, 3000);
       }
