@@ -1,4 +1,4 @@
-let REFRESH_INTERVAL=10;
+let REFRESH_INTERVAL = 10;
 
 const STATE = {
   stopNow: true,
@@ -7,16 +7,15 @@ const STATE = {
 };
 
 window.onload = () => {
-  if(!isLoginPage())
-  {
+  if (!isLoginPage()) {
     startUp()
   }
-  
+
   requestState()
 };
 
 async function startUp(reload) {
-  if(STATE.stopNow) return
+  if (STATE.stopNow) return
   const fn = 'startUp:';
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   try {
@@ -35,8 +34,7 @@ async function startUp(reload) {
           window.location.href = window.location.href;
         }
       }
-    } catch (error) {
-    }
+    } catch (error) {}
 
     navigate();
 
@@ -55,13 +53,12 @@ function requestState() {
 
       if (currentState) {
         if (isLoginPage()) {
-	console.log("Initiating Autologin...")
-	setTimeout(()=>
-	{
-          autoLogin()
-          return
+          console.log("Initiating Autologin...")
+          setTimeout(() => {
+            autoLogin()
+            return
 
-	},1000);
+          }, 1000);
         }
 
         startUp();
@@ -79,15 +76,14 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       startUp(true);
 
       const corrlinks_account = await getCorrlinksAccount();
-if (corrlinks_account) {
+      if (corrlinks_account) {
 
-
-  // Send the message with both account and password
-  sendMessage({
-    action: "SET_CORRLINKS_ACCOUNT",
-    corrlinks_account,
-  });
-}
+        // Send the message with both account and password
+        sendMessage({
+          action: "SET_CORRLINKS_ACCOUNT",
+          corrlinks_account,
+        });
+      }
       return;
 
     case "STOP_INTEGRATION":
@@ -104,11 +100,9 @@ if (corrlinks_account) {
       requestState(); // Generating "event" to prevent SW from going idle
       return;
 
-
   }
 
 });
-
 
 async function getCorrlinksAccount() {
   const fn = 'retrieveAccountAddress:';
@@ -125,7 +119,6 @@ async function getCorrlinksAccount() {
   }
   userButton.click();
 
-
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const listItem = document.getElementById('loggedInUser');
@@ -139,7 +132,6 @@ async function getCorrlinksAccount() {
   });
 }
 
-
 function processMessage(message) {
   if (STATE.currentMessage) {
     console.log('Another message is in queue. Will retry sending message shortly...');
@@ -149,7 +141,7 @@ function processMessage(message) {
   if (getPageType() === "NEW_MESSAGE") {
     STATE.currentMessage = message;
     let data = message.data.message
-    
+
     if (!data) return
     let id = null,
       subject = null,
@@ -185,8 +177,6 @@ function processMessage(message) {
   }
 }
 
-
-
 function validateMessage(uniqueID) {
   setTimeout(() => {
 
@@ -216,7 +206,6 @@ function validateMessage(uniqueID) {
   }, 1000);
 }
 
-
 function openList() {
   const Main = document.querySelector('[formcontrolname="contacts"]');
   if (Main) {
@@ -228,7 +217,6 @@ function openList() {
     }
   }
 }
-
 
 function fillSubject(text) {
   const inputBox = document.querySelector(`input[formcontrolname="subject"]`);
@@ -251,7 +239,6 @@ function fillMessage(text) {
 
   simulateClick(MainMsgBox) //This is necessary to remove ng-untouched class
 }
-
 
 async function clickItem(id) {
   return new Promise((resolve, reject) => {
@@ -301,27 +288,25 @@ function getPageType() {
   return result;
 }
 
-
 function addMessagetoQueue(msg) {
 
- let data = msg.data.message 
-   if (!data) return
-    let id = null,
+  let data = msg.data.message
+  if (!data) return
+  let id = null,
     subject = null,
     body = null
-    id = data.corrlinks_id;
-    subject = data.subject;
-    messagebody = data.body;
-    msgID = data.id;
+  id = data.corrlinks_id;
+  subject = data.subject;
+  messagebody = data.body;
+  msgID = data.id;
 
-if(!id || !subject || !messagebody || !msgID) return 
+  if (!id || !subject || !messagebody || !msgID) return
   chrome.runtime.sendMessage({
     action: 'ADD_MSG_TO_QUEUE',
     message: msg
 
   });
 }
-
 
 function setState() {
   chrome.runtime.sendMessage({
@@ -333,7 +318,6 @@ function isComposePage() {
   return (window.location.href.includes("https://www.corrlinks.com/en-US/mailbox/compose"))
 }
 
-
 function isLoginPage() {
   const targetUrls = [
     'https://www.corrlinks.com/en-US/login',
@@ -343,17 +327,14 @@ function isLoginPage() {
   return targetUrls.some(url => window.location.href === url);
 }
 
-
 function navigate(bypass) {
- // To compose message page
+  // To compose message page
   if (window.location.href !== "https://www.corrlinks.com/en-US/mailbox/compose") {
     window.location.href = "https://www.corrlinks.com/en-US/mailbox/compose";
   } else if (bypass) {
     window.location.href = "https://www.corrlinks.com/en-US/mailbox/compose";
   }
 }
-
-
 
 function successfullySent() {
   if (isComposePage()) {
@@ -362,9 +343,6 @@ function successfullySent() {
   }
   return false;
 }
-
-
-
 
 //Helper fns
 
@@ -438,89 +416,81 @@ function sendMessage(message) {
   chrome.runtime.sendMessage(null, message);
 }
 
-
 function blurElement(element) {
-    if (!element) return; 
+  if (!element) return;
 
-    const event = new FocusEvent('blur', { 
-        bubbles: true,
-        cancelable: true,
-        view: window
-    });
+  const event = new FocusEvent('blur', {
+    bubbles: true,
+    cancelable: true,
+    view: window
+  });
 
-    element.dispatchEvent(event);
+  element.dispatchEvent(event);
 }
-
 
 function autoLogin() {
- 
-const loginButton = Array.from(document.querySelectorAll('button'))
-                                  .find(button => button.innerText === 'Login');
-        setTimeout(() => {
-          if (loginButton) {
-		//clearForm()
-		login()
-          }
-        }, 3000);
 
-
+  const loginButton = Array.from(document.querySelectorAll('button'))
+    .find(button => button.innerText === 'Login');
+  setTimeout(() => {
+    if (loginButton) {
+      //clearForm()
+      login()
+    }
+  }, 3000);
 
 }
 
+function clearForm() {
+  const elements = document.querySelectorAll('.ng-valid, .ng-touched, .ng-dirty');
 
-
-function clearForm()
-{
-const elements = document.querySelectorAll('.ng-valid, .ng-touched, .ng-dirty');
-
-elements.forEach(element => {
+  elements.forEach(element => {
     if (element.classList.contains('ng-valid')) {
-        element.classList.remove('ng-valid');
-        element.classList.add('ng-invalid');
+      element.classList.remove('ng-valid');
+      element.classList.add('ng-invalid');
     }
-    
+
     if (element.classList.contains('ng-touched')) {
-        element.classList.remove('ng-touched');
-        element.classList.add('ng-untouched');
+      element.classList.remove('ng-touched');
+      element.classList.add('ng-untouched');
     }
 
     if (element.classList.contains('ng-dirty')) {
-        element.classList.remove('ng-dirty');
-        element.classList.add('ng-pristine');
+      element.classList.remove('ng-dirty');
+      element.classList.add('ng-pristine');
     }
-});
+  });
 }
 
 function login() {
-    chrome.runtime.sendMessage({ action: "checkAndSetTitle" }, function (response) {
-        if (response.success) {
-            // Define the event listener function
-            const handleClick = (event) => {
-                if (event.isTrusted) {
-                    document.title = "Corrlinks - Dashboard";
-                    const loginButton = Array.from(document.querySelectorAll('button'))
-                                             .find(button => button.innerText === 'Login');
-                    setTimeout(() => {
-                        if (loginButton) {
-                   	 document.title = "Corrlinks - Dashboard";
-                            loginButton.click();
-                            window.removeEventListener('click', handleClick);
-                            return;
-                        }
-                    }, 1000);
-                }
-            };
-
-            // Add the event listener
-            window.addEventListener('click', handleClick);
-
-            // Set the document title after adding the event listener
-            document.title = "CLICK_REQUEST_VIA_SENDER_EXT";
+  chrome.runtime.sendMessage({
+    action: "checkAndSetTitle"
+  }, function(response) {
+    if (response.success) {
+      // Define the event listener function
+      const handleClick = (event) => {
+        if (event.isTrusted) {
+          document.title = "Corrlinks - Dashboard";
+          const loginButton = Array.from(document.querySelectorAll('button'))
+            .find(button => button.innerText === 'Login');
+          setTimeout(() => {
+            if (loginButton) {
+              document.title = "Corrlinks - Dashboard";
+              loginButton.click();
+              window.removeEventListener('click', handleClick);
+              return;
+            }
+          }, 1000);
         }
-        else
-        {
-            console.log("Click queued.. Another Window requested Click Event First...")
-        }
-    });
+      };
+
+      // Add the event listener
+      window.addEventListener('click', handleClick);
+
+      // Set the document title after adding the event listener
+      document.title = "CLICK_REQUEST_VIA_SENDER_EXT";
+    } else {
+      console.log("Click queued.. Another Window requested Click Event First...")
+    }
+  });
 }
-
