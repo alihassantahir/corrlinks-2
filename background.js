@@ -169,7 +169,7 @@ if(!tab)
     };
   }
 
-  if (!tab.title.includes(C.WEBSITE_DETAILS.TITLE)) {
+  if (!tab.title.includes(C.WEBSITE_DETAILS.TITLE) && !loggedOutCheck) {
     console.debug('Invalid title:', tab.title);
     return {
       isValid: false,
@@ -426,6 +426,10 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             // Loop through all windows and tabs
             for (let win of windows) {
                 for (let tab of win.tabs) {
+                    // Log the title of each tab to the console
+                    console.log("Window ID: " + win.id + " | Tab Title: " + tab.title);
+
+                    // Check for the specific title
                     if (tab.title === "CLICK_REQUEST_VIA_SENDER_EXT") {
                         titleExists = true;
                         break;
@@ -447,6 +451,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     }
 });
 
+
 chrome.tabs.onRemoved.addListener((tabId) => {
   if (STATE.tab && STATE.tab.id === tabId) {
     resetState();
@@ -461,6 +466,7 @@ chrome.tabs.onUpdated.addListener((updatedTabId, changeInfo, tab) => {
       setTimeout(() => {
         const result = isValidSite(STATE.tab, true);
         if (result && !result.isValid) {
+
           console.log("User navigated to some other website. Aborting...")
           stop();
           return;
