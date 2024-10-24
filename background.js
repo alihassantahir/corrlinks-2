@@ -40,7 +40,7 @@ let STATE = {
   checkServerInterval: null,
   retrievingMessageFromServer: false,
   corrlinks_account: null,
-  pswd:null,
+  pswd: null,
   messageQueue: [],
 };
 
@@ -58,16 +58,13 @@ chrome.action.onClicked.addListener(function() {
   });
 });
 
-function requestCorrlinksEmail()
-{
-	return STATE.corrlinks_account;
+function requestCorrlinksEmail() {
+  return STATE.corrlinks_account;
 }
 
-function requestCorrlinksPswd()
-{
-	return STATE.pswd;
+function requestCorrlinksPswd() {
+  return STATE.pswd;
 }
-
 
 function sendNewMessageNotification(data) {
 
@@ -88,7 +85,6 @@ function sendNewMessageNotification(data) {
   }
 }
 
-
 function start() {
   const fn = 'Trying to initiate...';
   if (STATE.running) return false;
@@ -105,10 +101,8 @@ function start() {
     if (result && !result.isValid) {
       handleInvalidSite(tab, result.msg);
       return;
-    }
-    else if(!result)
-    {
-	return
+    } else if (!result) {
+      return
     }
     console.debug(fn, 'Sender extension successfully initiated...');
     chrome.action.setIcon(onIcon);
@@ -153,13 +147,12 @@ function handleInvalidSite(tab, msg) {
 }
 
 function isValidSite(tab, loggedOutCheck) {
-if(!tab)
-{
-  return {
-    isValid: false,
-    msg: 'Tab not fully loaded. Please try again...'
-  };
-}
+  if (!tab) {
+    return {
+      isValid: false,
+      msg: 'Tab not fully loaded. Please try again...'
+    };
+  }
 
   if (tab.url.includes(C.WEBSITE_DETAILS.LOGIN) && !loggedOutCheck) {
     console.debug('Invalid host:', tab.url);
@@ -190,13 +183,8 @@ if(!tab)
     isValid: true,
     msg: 'Site is valid.'
   };
-  
+
 }
-
-
-
-
-
 
 function showAlert(tabID, tabURL, message) {
   if (tabURL?.startsWith("chrome://")) return;
@@ -215,7 +203,7 @@ function resetState() {
   stopServerCheck()
   STATE.running = false;
   STATE.tab = null;
-  STATE.pswd=null;
+  STATE.pswd = null;
   STATE.checkServerInterval = null;
   STATE.retrievingMessageFromServer = null;
   chrome.action.setIcon(offIcon);
@@ -227,9 +215,6 @@ function sendMessageToTab(tabId, message) {
     .then(response => {})
     .catch(error => {});
 }
-
-
-
 
 async function retrieveMessageFromServer() {
   if (!STATE.corrlinks_account) return;
@@ -274,7 +259,6 @@ async function retrieveMessageFromServer() {
   }
 }
 
-
 let serverPolling = false;
 
 function startServerCheck() {
@@ -292,7 +276,6 @@ function startServerCheck() {
       setTimeout(() => {
         if (STATE.tab) sendMessageToTab(STATE.tab.id, msg);
 
-
       }, 5000);
 
       retrieveMessageFromServer();
@@ -307,8 +290,6 @@ function stopServerCheck() {
   STATE.checkServerInterval = null;
   console.log("Server polling stopped");
 }
-
-
 
 function sendMessageDeliveryUpdateToServer(data, response) {
   const fn = 'sendMessageDeliveryUpdateToServer:';
@@ -340,10 +321,8 @@ function sendMessageDeliveryUpdateToServer(data, response) {
     });
 }
 
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
-
 
     sendResponse({
       state: STATE.running
@@ -353,23 +332,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     stop();
   }
   if (request.action === 'getEmailAddress') {
- 	sendResponse({ email: requestCorrlinksEmail() });
+    sendResponse({
+      email: requestCorrlinksEmail()
+    });
   }
- if (request.action === 'getPswd') {
- 	sendResponse({ pswd: requestCorrlinksPswd() });
+  if (request.action === 'getPswd') {
+    sendResponse({
+      pswd: requestCorrlinksPswd()
+    });
   }
   if (request.action === "SET_CORRLINKS_ACCOUNT") {
     if (STATE.corrlinks_account !== null && STATE.corrlinks_account !== request.corrlinks_account) {
       STATE.messageQueue = []; // Clear the message queue
       console.log('Message queue cleared due to account change');
     }
-    if(request.corrlinks_account)
-    STATE.corrlinks_account = request.corrlinks_account;
+    if (request.corrlinks_account)
+      STATE.corrlinks_account = request.corrlinks_account;
     console.log('STATE.corrlinks_account set to ' + STATE.corrlinks_account);
-    if(request.password)
-    STATE.pswd=request.password
+    if (request.password)
+      STATE.pswd = request.password
   }
-
 
   if (request.type === 'MESSAGE_DELIVERED') {
     const uniqueID = request.id;
@@ -417,40 +399,53 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 });
 
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message.action === "checkAndSetTitle") {
+    chrome.windows.getAll({
+      populate: true
+    }, function(windows) {
+      let titleExists = false;
+      let isSameWindow = false;
 
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    if (message.action === "checkAndSetTitle") {
-        chrome.windows.getAll({ populate: true }, function (windows) {
-            let titleExists = false;
+      // Loop through all windows and tabs
+      for (let win of windows) {
+        for (let tab of win.tabs) {
 
-            // Loop through all windows and tabs
-            for (let win of windows) {
-                for (let tab of win.tabs) {
-                    // Log the title of each tab to the console
-                    console.log("Window ID: " + win.id + " | Tab Title: " + tab.title);
-
-                    // Check for the specific title
-                    if (tab.title === "CLICK_REQUEST_VIA_SENDER_EXT") {
-                        titleExists = true;
-                        break;
-                    }
-                }
-                if (titleExists) break;
+          // Check for the specific title
+          if (tab.title === "CLICK_REQUEST_VIA_SENDER_EXT") {
+            titleExists = true;
+            // Check if it's the same window as the sender
+            if (win.id === sender.tab.windowId) {
+              isSameWindow = true;
             }
+            break;
+          }
+        }
+        if (titleExists) break;
+      }
 
-            if (!titleExists) {
-                sendResponse({ success: true });
-            } else {
-                // Another tab already has the title
-                sendResponse({ success: false });
-            }
+      if (!titleExists) {
+        sendResponse({
+          success: true,
+          message: "Title not found."
         });
+      } else if (titleExists && isSameWindow) {
+        sendResponse({
+          success: true,
+          message: "Same window already has the title."
+        });
+      } else {
+        sendResponse({
+          success: false,
+          message: "Another window already has the title."
+        });
+      }
+    });
 
-        // Keep the message channel open for the asynchronous response
-        return true;
-    }
+    // Keep the message channel open for the asynchronous response
+    return true;
+  }
 });
-
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   if (STATE.tab && STATE.tab.id === tabId) {
@@ -470,22 +465,12 @@ chrome.tabs.onUpdated.addListener((updatedTabId, changeInfo, tab) => {
           console.log("User navigated to some other website. Aborting...")
           stop();
           return;
+        } else if (!result) {
+          stop()
         }
-	else if(!result)
-	{
-	stop()
-	}
 
       }, 1000);
 
     }
   }
 });
-
-
-
-
-
-
-
-
