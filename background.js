@@ -418,7 +418,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (message.action === "checkAndSetTitle") {
+        chrome.windows.getAll({ populate: true }, function (windows) {
+            let titleExists = false;
 
+            // Loop through all windows and tabs
+            for (let win of windows) {
+                for (let tab of win.tabs) {
+                    if (tab.title === "CLICK_REQUEST_VIA_SENDER_EXT") {
+                        titleExists = true;
+                        break;
+                    }
+                }
+                if (titleExists) break;
+            }
+
+            if (!titleExists) {
+                sendResponse({ success: true });
+            } else {
+                // Another tab already has the title
+                sendResponse({ success: false });
+            }
+        });
+
+        // Keep the message channel open for the asynchronous response
+        return true;
+    }
+});
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   if (STATE.tab && STATE.tab.id === tabId) {
