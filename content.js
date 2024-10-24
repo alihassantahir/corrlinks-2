@@ -20,7 +20,7 @@ async function startUp(reload) {
   const fn = 'startUp:';
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   try {
-    await delay(1000);
+    await delay(2000);
 
     try {
       const corrlinks_account = await getCorrlinksAccount();
@@ -81,13 +81,11 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       const corrlinks_account = await getCorrlinksAccount();
 if (corrlinks_account) {
 
-  const password = prompt("Please enter password for " + corrlinks_account + ":");
 
   // Send the message with both account and password
   sendMessage({
     action: "SET_CORRLINKS_ACCOUNT",
     corrlinks_account,
-    password  // Include the password
   });
 }
       return;
@@ -453,37 +451,20 @@ function blurElement(element) {
     element.dispatchEvent(event);
 }
 
-let lastLoginTry = null;
 
 function autoLogin() {
-  const currentTime = new Date();
-
-  // Throttling logic for login attempts
-  if (lastLoginTry && (currentTime - lastLoginTry < 8000)) {
-    return; 
-  } else if (lastLoginTry && (currentTime - lastLoginTry > 30000)) {
-    return; 
-  }
-
-  lastLoginTry = currentTime;
-
-  fetchEmail((username) => {
-    if (!username) return; // Exit if username is not retrieved
-
-    fetchPassword((password) => {
-      if (!password) return; // Exit if password is not retrieved
-
+ 
 const loginButton = Array.from(document.querySelectorAll('button'))
                                   .find(button => button.innerText === 'Login');
         setTimeout(() => {
           if (loginButton) {
-		clearForm()
-		login(username, password)
+		//clearForm()
+		login()
           }
         }, 3000);
 
-    });
-  });
+
+
 }
 
 
@@ -511,55 +492,35 @@ elements.forEach(element => {
 }
 
 
+function login() {
+    chrome.runtime.sendMessage({ action: "checkAndSetTitle" }, function (response) {
+        if (response.success) {
+	window.addEventListener('click', (event) => {
+    if (event.isTrusted) {
 
-function login(email,password)
-{
-const url = 'https://www.corrlinks.com/api/session';  //A simple post request to this url allows login...
+        document.title = "AUTOLOGIN INIT"; 
+	const loginButton = Array.from(document.querySelectorAll('button'))
+                                  .find(button => button.innerText === 'Login');
+	setTimeout(()=>
+	{
 
-const data = {
-    emailAddress:email,
-    password: password
-};
+	if(loginButton)
+		
+	{
+	loginButton.click()
+	return
+	}
 
-fetch(url, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-})
-.then(response => response.json())
-.then(data => {
-
-    console.log('Success:', data);
-    navigate()
-
-    
-})
-.catch((error) => {
-    console.error('Error:', error);
+	},1000);
+	    }
 });
+		document.title="CLICK_REQUEST_VIA_SENDER_EXT"
 
 
-}
-function fetchEmail(callback) {
-  chrome.runtime.sendMessage({ action: 'getEmailAddress' }, (response) => {
-    if (response.email) {
-      callback(response.email);
-    } else {
-      console.error("Failed to retrieve email address.");
-      callback(null);
-    }
-  });
+        } else {
+            console.log("Another tab already has the title. Keep looking...");
+        }
+    });
 }
 
-function fetchPassword(callback) {
-  chrome.runtime.sendMessage({ action: 'getPswd' }, (response) => {
-    if (response.pswd) {
-      callback(response.pswd);
-    } else {
-      console.error("Failed to retrieve password.");
-      callback(null);
-    }
-  });
-}
+
