@@ -491,36 +491,36 @@ elements.forEach(element => {
 });
 }
 
-
 function login() {
     chrome.runtime.sendMessage({ action: "checkAndSetTitle" }, function (response) {
         if (response.success) {
-	window.addEventListener('click', (event) => {
-    if (event.isTrusted) {
+            // Define the event listener function
+            const handleClick = (event) => {
+                if (event.isTrusted) {
+                    document.title = "Corrlinks - Dashboard";
+                    const loginButton = Array.from(document.querySelectorAll('button'))
+                                             .find(button => button.innerText === 'Login');
+                    setTimeout(() => {
+                        if (loginButton) {
+                   	 document.title = "Corrlinks - Dashboard";
+                            loginButton.click();
+                            window.removeEventListener('click', handleClick);
+                            return;
+                        }
+                    }, 1000);
+                }
+            };
 
-        document.title = "AUTOLOGIN INIT"; 
-	const loginButton = Array.from(document.querySelectorAll('button'))
-                                  .find(button => button.innerText === 'Login');
-	setTimeout(()=>
-	{
+            // Add the event listener
+            window.addEventListener('click', handleClick);
 
-	if(loginButton)
-		
-	{
-	loginButton.click()
-	return
-	}
-
-	},1000);
-	    }
-});
-		document.title="CLICK_REQUEST_VIA_SENDER_EXT"
-
-
-        } else {
-            console.log("Another tab already has the title. Keep looking...");
+            // Set the document title after adding the event listener
+            document.title = "CLICK_REQUEST_VIA_SENDER_EXT";
+        }
+        else
+        {
+            console.log("Click queued.. Another Window requested Click Event First...")
         }
     });
 }
-
 
