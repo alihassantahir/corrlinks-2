@@ -97,7 +97,9 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
     case "POLLING_SERVER":
       console.log("Polling the server...");
+      
       requestState(); // Generating "event" to prevent SW from going idle
+      autoRefresh()
       return;
 
   }
@@ -175,6 +177,16 @@ function processMessage(message) {
     addMessagetoQueue(message)
     navigate(true)
   }
+}
+function autoRefresh()
+{
+let knownText = "Sorry, your request could not be processed";
+let found = Array.from(document.body.querySelectorAll("*"))
+                 .some(el => el.textContent.includes(knownText));
+
+if (found) {
+  window.location.reload(true)
+} 
 }
 
 function validateMessage(uniqueID) {
