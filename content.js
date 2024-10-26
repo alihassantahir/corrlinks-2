@@ -1,4 +1,5 @@
 let REFRESH_INTERVAL = 10;
+let ERROR_TEXT = "Sorry, your request could not be processed";
 
 const STATE = {
   stopNow: true,
@@ -19,7 +20,7 @@ async function startUp(reload) {
   const fn = 'startUp:';
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   try {
-    await delay(2000);
+    await delay(1000);
 
     try {
       const corrlinks_account = await getCorrlinksAccount();
@@ -180,13 +181,13 @@ function processMessage(message) {
 }
 function autoRefresh()
 {
-let knownText = "Sorry, your request could not be processed";
 let found = Array.from(document.body.querySelectorAll("*"))
-                 .some(el => el.textContent.includes(knownText));
+                 .some(el => el.textContent.includes(ERROR_TEXT));
 
 if (found) {
   window.location.reload(true)
 } 
+  
 }
 
 function validateMessage(uniqueID) {
